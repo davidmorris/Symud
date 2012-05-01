@@ -3,7 +3,7 @@
 /**
  * Symud is a RightMove BLM builder and parser
  *
- * @author David Morris
+ * @author David Morris & Jack Hannigan Popp
  */
 class Symud {
     
@@ -587,6 +587,77 @@ class Symud {
             'is_required' => FALSE,
         )
     );
+    
+    /**
+     * Load properties from database
+     * Recursively add to the $rightmove_fields array.
+     * @return array
+     */
+    public function loadProperties(){
+        
+    }
+    
+    /**
+     * Scrape property image folder.
+     * Rename and copy to property media folder.
+     * Naming structure <AGENT_REF>_<MEDIA_TYPE>_<n>.<file exentsion>
+     * <AGENT_REF> - bramd Od and property reference
+     * <MDIA_TYPE> - IMG = property image, FLP = floor plan, DOC = docs and brochure
+     * <n> - index number start from 00 to sequence the media
+     * <file extension> - Acceptable file types - .jpg, .png, .gif
+     */
+    
+    public function loadImages($source_directory,$branch_id,$destination_directory){
+        
+    }
+    
+    /**
+     * Scrape floor plan folder.
+     * Rename and copy to property media folder.
+     * Naming structure <AGENT_REF>_<MEDIA_TYPE>_<n>.<file exentsion>
+     * <AGENT_REF> - bramd Od and property reference
+     * <MDIA_TYPE> - IMG = property image, FLP = floor plan, DOC = docs and brochure
+     * <n> - index number start from 00 to sequence the media
+     * <file extension> - Acceptable file types - .jpg, .png, .gif
+     */
+    public function loadFLP($source_directory,$branch_id,$destination_directory){
+        
+    }
+    
+    /**
+     * Scrape documents/brouchure folder.
+     * Rename and copy to propery media folder.
+     * Naming structure <AGENT_REF>_<MEDIA_TYPE>_<n>.<file exentsion>
+     * <AGENT_REF> - bramd Od and property reference
+     * <MDIA_TYPE> - IMG = property image, FLP = floor plan, DOC = docs and brochure
+     * <n> - index number start from 00 to sequence the media
+     * <file extension> - Acceptable file types - .pdf
+     */
+    public function loadDOC($source_directory,$branch_id,$destination_directory){
+        
+    }
+    
+    
+    /**
+     * Creates a ZIP file of the media for upload.
+     * Naming structure <BRANCH_ID>.ZIP
+     */
+    
+    public function createMediaZip($source_directory,$branch_id,$destination_directory){
+        
+    }
+    
+    /**
+     * Writes the BLM file
+     * Naming structure <BRANCH_ID>_<YYYY><MM><DD><SEQ NO>.BLM
+     * @return type boolean 
+     */
+    public function blmOut($source_directory,$branch_id,$destination_directory){
+        $date_year;
+        $date_month;
+        $date_day;
+        return $success();    
+    }
     
 }
 
