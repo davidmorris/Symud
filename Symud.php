@@ -601,25 +601,48 @@ class Symud {
      * Scrape property image folder.
      * Rename and copy to property media folder.
      * Naming structure <AGENT_REF>_<MEDIA_TYPE>_<n>.<file exentsion>
+     * <AGENT_REF> - bramd Od and property reference
+     * <MDIA_TYPE> - IMG = property image, FLP = floor plan, DOC = docs and brochure
+     * <n> - index number start from 00 to sequence the media
+     * <file extension> - Acceptable file types - .jpg, .png, .gif
      */
     
-    public function loadImages(){
+    public function loadImages($sourceDirectory,$branchid,$destinationDirectory){
         
     }
     
-    /*
+    /**
      * Scrape floor plan folder.
      * Rename and copy to property media folder.
      * Naming structure <AGENT_REF>_<MEDIA_TYPE>_<n>.<file exentsion>
+     * <AGENT_REF> - bramd Od and property reference
+     * <MDIA_TYPE> - IMG = property image, FLP = floor plan, DOC = docs and brochure
+     * <n> - index number start from 00 to sequence the media
+     * <file extension> - Acceptable file types - .jpg, .png, .gif
      */
-    public function loadFLP(){
+    public function loadFLP($sourceDirectory,$branchid,$destinationDirectory){
         
     }
-    /* Scrape documents/brouchure folder.
+    
+    /**
+     * Scrape documents/brouchure folder.
      * Rename and copy to propery media folder.
      * Naming structure <AGENT_REF>_<MEDIA_TYPE>_<n>.<file exentsion>
+     * <AGENT_REF> - bramd Od and property reference
+     * <MDIA_TYPE> - IMG = property image, FLP = floor plan, DOC = docs and brochure
+     * <n> - index number start from 00 to sequence the media
+     * <file extension> - Acceptable file types - .pdf
      */
-    public function loadDOC(){
+    public function loadDOC($sourceDirectory,$branchid,$destinationDirectory){
+        
+    }
+    
+    
+    /**
+     * Creates a ZIP file of the media for upload.
+     */
+    
+    public function creatMediaZip(){
         
     }
     
