@@ -593,7 +593,8 @@ class Symud {
      * Recursively add to the $rightmove_fields array.
      * @return array
      */
-    public function loadProperties(){
+    public function Load_properties()
+    {
         
     }
     
@@ -607,7 +608,8 @@ class Symud {
      * <file extension> - Acceptable file types - .jpg, .png, .gif
      */
     
-    public function loadImages($source_directory,$branch_id,$destination_directory){
+    public function Load_images($source_directory,$branch_id,$destination_directory)
+    {
         
     }
     
@@ -620,7 +622,8 @@ class Symud {
      * <n> - index number start from 00 to sequence the media
      * <file extension> - Acceptable file types - .jpg, .png, .gif
      */
-    public function loadFLP($source_directory,$branch_id,$destination_directory){
+    public function Load_flp($source_directory,$branch_id,$destination_directory)
+    {
         
     }
     
@@ -633,7 +636,8 @@ class Symud {
      * <n> - index number start from 00 to sequence the media
      * <file extension> - Acceptable file types - .pdf
      */
-    public function loadDOC($source_directory,$branch_id,$destination_directory){
+    public function Load_doc($source_directory,$branch_id,$destination_directory)
+    {
         
     }
     
@@ -643,7 +647,8 @@ class Symud {
      * Naming structure <BRANCH_ID>.ZIP
      */
     
-    public function createMediaZip($source_directory,$branch_id,$destination_directory){
+    public function Create_media_zip($source_directory,$branch_id,$destination_directory)
+    {
         
     }
     
@@ -652,7 +657,8 @@ class Symud {
      * Naming structure <BRANCH_ID>_<YYYY><MM><DD><SEQ NO>.BLM
      * @return type boolean 
      */
-    public function blmOut($source_directory,$branch_id,$destination_directory){
+    public function BLM_out($source_directory,$branch_id,$destination_directory)
+    {
         $date_year;
         $date_month;
         $date_day;
