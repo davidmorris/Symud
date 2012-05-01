@@ -3,7 +3,7 @@
 /**
  * Symud is a RightMove BLM builder and parser
  *
- * @author David Morris
+ * @author David Morris & Jack Hannigan Popp
  */
 class Symud {
     
