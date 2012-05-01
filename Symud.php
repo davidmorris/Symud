@@ -607,7 +607,7 @@ class Symud {
      * <file extension> - Acceptable file types - .jpg, .png, .gif
      */
     
-    public function loadImages($sourceDirectory,$branchid,$destinationDirectory){
+    public function loadImages($source_directory,$branch_id,$destination_directory){
         
     }
     
@@ -620,7 +620,7 @@ class Symud {
      * <n> - index number start from 00 to sequence the media
      * <file extension> - Acceptable file types - .jpg, .png, .gif
      */
-    public function loadFLP($sourceDirectory,$branchid,$destinationDirectory){
+    public function loadFLP($source_directory,$branch_id,$destination_directory){
         
     }
     
@@ -633,25 +633,30 @@ class Symud {
      * <n> - index number start from 00 to sequence the media
      * <file extension> - Acceptable file types - .pdf
      */
-    public function loadDOC($sourceDirectory,$branchid,$destinationDirectory){
+    public function loadDOC($source_directory,$branch_id,$destination_directory){
         
     }
     
     
     /**
      * Creates a ZIP file of the media for upload.
+     * Naming structure <BRANCH_ID>.ZIP
      */
     
-    public function creatMediaZip(){
+    public function createMediaZip($source_directory,$branch_id,$destination_directory){
         
     }
     
     /**
      * Writes the BLM file
+     * Naming structure <BRANCH_ID>_<YYYY><MM><DD><SEQ NO>.BLM
      * @return type boolean 
      */
-    public function blmOut(){
-    return $success();    
+    public function blmOut($source_directory,$branch_id,$destination_directory){
+        $date_year;
+        $date_month;
+        $date_day;
+        return $success();    
     }
     
 }
