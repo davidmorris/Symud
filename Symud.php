@@ -588,6 +588,49 @@ class Symud {
         )
     );
     
+    /**
+     * Load properties from database
+     * Recursively add to the $rightmove_fields array.
+     * @return array
+     */
+    public function loadProperties(){
+        
+    }
+    
+    /**
+     * Scrape property image folder.
+     * Rename and copy to property media folder.
+     * Naming structure <AGENT_REF>_<MEDIA_TYPE>_<n>.<file exentsion>
+     */
+    
+    public function loadImages(){
+        
+    }
+    
+    /*
+     * Scrape floor plan folder.
+     * Rename and copy to property media folder.
+     * Naming structure <AGENT_REF>_<MEDIA_TYPE>_<n>.<file exentsion>
+     */
+    public function loadFLP(){
+        
+    }
+    /* Scrape documents/brouchure folder.
+     * Rename and copy to propery media folder.
+     * Naming structure <AGENT_REF>_<MEDIA_TYPE>_<n>.<file exentsion>
+     */
+    public function loadDOC(){
+        
+    }
+    
+    /**
+     * Writes the BLM file
+     * @return type boolean 
+     */
+    public function blmOut(){
+    return $success();    
+    }
+    
 }
 
 // End of file
