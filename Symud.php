@@ -7,7 +7,14 @@
  */
 class Symud {
     
+    /**
+     * START STATIC VARIABLES FOR RIGHTMOVE DEFINITIONS AND FIELDS 
+     */
     
+    /**
+     * Static array for some of RightMove's custom field data
+     * @var array 
+     */
     protected static $rightmove_custom_fields = array(
             'STATUS_ID' => array(
                     "Available",
@@ -147,7 +154,13 @@ class Symud {
             )
     );
     
-    protected static $rightmove_fields = array (
+    /**
+     * Static array of all the definitions used by RightMove's blm file.
+     * Each field has a type and if applicable, a max length of characters and 
+     * a flag if it is a required field.
+     * @var array 
+     */
+    protected static $rightmove_definitions = array (
         'AGENT_REF' => 
         array (
             'type' => 'string',
@@ -588,12 +601,144 @@ class Symud {
         )
     );
     
+    protected static $repeated_media = array(
+	'MEDIA_IMAGE', 
+	'MEDIA_FLOOR_PLAN',  
+	'MEDIA_DOCUMENT', 
+	'MEDIA_VIRTUAL_TOUR' 
+    );
+    
+    protected static $verison = 3;
+    
+    // Regex used for finding media with trailing int
+    protected static $media_regex = '/MEDIA_(IMAGE|IMAGE_TEXT|
+	FLOORPLAN|FLOORPLAN_TEXT|DOCUMENT|DOCUMENT_TEXT|
+	VIRTUAL_TOUR|VIRTUAL_TOUR_TEXT)_\d+/';
+    
+    /**
+     * END OF STATIC VARIABLES 
+     */
+    
+    private $_branch_id                 = '994499';	// Default branch id
+    private $_eof                       = '^';		// End of Field delim
+    private $_eor                       = '~';		// End of Record delim
+    private $_definitions		= array();	// Definitions array
+    private $_requireds			= array();	// Required definitions
+    
+    private $_properties                = array();	// Holds properties
+    private $_num_of_properties         = 0;
+    
+    private $_max_media_image_num	= 1; // Default requires one image
+    private $_max_floor_plan_num	= 0;
+    private $_max_media_document_num	= 0;
+    private $_max_virtual_tour_num	= 0;
+    
+    public function __construct($branch_id, $eof = '^', $eor = '|') 
+    {
+        $this->_branch_id = $branch_id;
+        $this->_eof = $eof;
+	$this->_eor = $eor;
+	
+	$this->_init_keys()->_init_requireds();
+    }
+    
+    public function get_branch_id()
+    {
+	return $this->_branch_id;
+    }
+
+    public function set_branch_id($_branch_id)
+    {
+	$this->_branch_id = $_branch_id;
+	
+	return $this;
+    }
+
+    public function get_eof()
+    {
+	return $this->_eof;
+    }
+
+    public function set_eof($_eof)
+    {
+	$this->_eof = $_eof;
+	
+	return $this;
+    }
+
+    public function get_eor()
+    {
+	return $this->_eor;
+    }
+
+    public function set_eor($_eor)
+    {
+	$this->_eor = $_eor;
+	
+	return $this;
+    }
+
+    public function get_definitions()
+    {
+	return $this->_definitions;
+    }
+
+    public function get_requireds()
+    {
+	return $this->_requireds;
+    }
+    
+    public function get_num_of_properties()
+    {
+	return $this->_num_of_properties;
+    }
+
+    public function get_max_images_num()
+    {
+	return $this->_max_media_image_num;
+    }
+
+    public function get_max_floorplans_num()
+    {
+	return $this->_max_floor_plan_num;
+    }
+
+    public function get_max_documents_num()
+    {
+	return $this->_max_media_document_num;
+    }
+    
+    public function get_max_virtual_num()
+    {
+	return $this->_max_virtual_tour_num;
+    }
+
+    /**
+     * Adds a property, santises it and validates it first
+     * @param array $property
+     * @return int the property number 
+     */    
+    public function add_property($property)
+    {
+	// Add branch ids and references etc
+	$property['AGENT_REF'] = $this->_branch_id.'_'.($this->_num_of_properties + 1);
+	$property['BRANCH_ID'] = $this->_branch_id;
+	
+	$this->_sanitise_property($property)->_check_for_requireds($property)
+		->_validate_property($property)->_media_count($property);
+	
+	$this->_properties[] = $property;
+	
+	return ++$this->_num_of_properties;
+    }
+    
+    
     /**
      * Load properties from database
      * Recursively add to the $rightmove_fields array.
      * @return array
      */
-    public function Load_properties()
+    public function load_properties()
     {
         
     }
@@ -608,7 +753,7 @@ class Symud {
      * <file extension> - Acceptable file types - .jpg, .png, .gif
      */
     
-    public function Load_images($source_directory,$branch_id,$destination_directory)
+    public function load_images($source_directory,$branch_id,$destination_directory)
     {
         
     }
@@ -622,7 +767,7 @@ class Symud {
      * <n> - index number start from 00 to sequence the media
      * <file extension> - Acceptable file types - .jpg, .png, .gif
      */
-    public function Load_flp($source_directory,$branch_id,$destination_directory)
+    public function load_flp($source_directory,$branch_id,$destination_directory)
     {
         
     }
@@ -636,7 +781,7 @@ class Symud {
      * <n> - index number start from 00 to sequence the media
      * <file extension> - Acceptable file types - .pdf
      */
-    public function Load_doc($source_directory,$branch_id,$destination_directory)
+    public function load_doc($source_directory,$branch_id,$destination_directory)
     {
         
     }
@@ -647,7 +792,7 @@ class Symud {
      * Naming structure <BRANCH_ID>.ZIP
      */
     
-    public function Create_media_zip($source_directory,$branch_id,$destination_directory)
+    public function create_media_zip($source_directory,$branch_id,$destination_directory)
     {
         
     }
@@ -657,7 +802,7 @@ class Symud {
      * Naming structure <BRANCH_ID>_<YYYY><MM><DD><SEQ NO>.BLM
      * @return type boolean 
      */
-    public function BLM_out($source_directory,$branch_id,$destination_directory)
+    public function blm_out($source_directory,$branch_id,$destination_directory)
     {
         $date_year;
         $date_month;
@@ -665,6 +810,224 @@ class Symud {
         return $success();    
     }
     
+    
+    /**
+     * Initialise the definitions array, replacing xx with 00 where needed
+     * @return \Symud 
+     */
+    private function _init_keys()
+    {
+	$this->_definitions = array_keys(self::$rightmove_definitions);
+	$m = count($this->_definitions);
+	for($i = 0; $i < $m; $i++)
+	    $this->_definitions[$i] = str_replace ('_XX','_00', $this->_definitions[$i]);
+	
+	return $this;
+    }
+    
+    /**
+     * Initialise the array of required fields for any blm file
+     * @return \Symud 
+     */
+    private function _init_requireds()
+    {
+	foreach(self::$rightmove_definitions as $key => $data)
+	    if($data['is_required'] === TRUE)
+		$this->_requireds[] = str_replace ('_XX', '_00', $key);
+	
+	return $this;
+    }
+    
+    /**
+     * Cleans a property array so that only rightmove definitions are used.
+     * 
+     * @param array $property
+     * @return \Symud
+     * @throws EmptyPropertyDataException 
+     */
+    private function _sanitise_property(&$property)
+    {
+	$return = array();
+	foreach($property as $key => $val)
+	{
+	    //check if we have a key in our definitions
+	    if(in_array($key, $this->_definitions) || preg_match(self::$media_regex, $key))
+		$return[$key] = $val;
+	}
+	
+	// If there are no valid definitions, throw exception
+	if(!count($property))
+	    throw new EmptyPropertyDataException;
+	
+	$property = $return;
+	
+	return $this;
+    }
+    
+    /**
+     * Checks that all required fields are used in the property
+     * @param array $property
+     * @return \Symud
+     * @throws MissingRequiredFieldsException 
+     */
+    private function _check_for_requireds(&$property)
+    {
+	foreach($this->_requireds as $req)
+	    if(!array_key_exists($req, $property) && strlen(trim($property[$req])))
+		    throw new MissingRequiredFieldsException($req);
+	return $this;
+    }
+    
+    /**
+     * Validates a property's data. Checks the required data type, the length 
+     * of data. If the field has custom field data, @see self::$rightmove_custom_fields, 
+     * then this is checked against too.
+     * 
+     * @param array $property
+     * @return \Symud
+     * @throws PropertyFieldTooBig
+     * @throws PropertyFieldNotInteger
+     * @throws PropertyFieldNotCharacter
+     * @throws InvalidRightMoveFieldData 
+     */
+    private function _validate_property(&$property)
+    {
+	foreach($property as $key => $val)
+	{
+	    if(isset(self::$rightmove_definitions[$key]))
+	    {
+		// Test length and data type
+		$el = self::$rightmove_definitions[$key];
+		if($el['len'] > 0 && strlen($val) > $el['len'])
+		    throw new PropertyFieldTooBig($key);
+		if($el['type'] == 'int' && !is_integer($val) && !ctype_digit($val))
+		    throw new PropertyFieldNotInteger($key, $val);
+		else if(!strlen(trim($val)))
+		    throw new PropertyFieldNotCharacter($key, $val);
+		
+		// Check against RightMove's custom fields
+		if(isset(self::$rightmove_custom_fields[$key]) && 
+			!isset(self::$rightmove_custom_fields[$key][$val]))
+		    throw new InvalidRightMoveFieldData($key, $val);
+	    }
+	}
+	
+	return $this;
+    }
+    
+    /**
+     * Counts the maximum amount of each media. Since all BLM records must have 
+     * the same number of data entries.
+     * 
+     * @param array $property
+     * @return \Symud 
+     */
+    private function _media_count(&$property)
+    {
+	$keys = array_keys($property);
+	$this->_max_media_image_num = max(count(preg_grep('/MEDIA_IMAGE_\d+/', $keys)), $this->_max_media_image_num);
+	$this->_max_media_document_num = max(count(preg_grep('/MEDIA_DOCUMENT_\d+/', $keys)), $this->_max_media_document_num);
+	$this->_max_floor_plan_num = max(count(preg_grep('/MEDIA_FLOOR_PLAN_\d+/', $keys)), $this->_max_floor_plan_num);
+	$this->_max_virtual_tour_num = max(count(preg_grep('/MEDIA_VIRTUAL_TOUR_\d+/', $keys)), $this->_max_virtual_tour_num);
+	
+	return $this;
+    }
+    
+    /**
+     * Automatically builds the media fields, to ensure the max number is used for 
+     * each record. Blanks are used if media does not exist for property
+     * 
+     * returns the blm formatted field data
+     * 
+     * @param string $tag
+     * @param array $property
+     * @return string 
+     */
+    private function _build_media_fields($tag, &$property)
+    {
+	$return = '';
+	$tag = str_replace('_text', '', $tag);
+	$keys = array_keys($property);
+	
+	// Get our media 
+	$media = preg_grep('/'.$tag.'_\d+/', $keys);
+	
+	// Get our media text
+	foreach(preg_grep('/'.$tag.'_TEXT_\d+/', $keys) as $el)
+	    $media[] = $el;	
+	$count = '_max_'.strtolower($tag).'_num';
+	$media = array_pad($media, ($this->{$count} * 2), '');
+	foreach($media as $field)
+	    $return .= $property[$field].$this->_eof;
+	
+	if(strlen($return) == 0)
+	    $return = $this->_eof.$this->_eof;
+	
+	return $return;
+	
+    }
+    
+    /**
+     * Turns a single property into a blm formatted record
+     * 
+     * @todo fix duplicated with media text
+     * @param array $property
+     * @return string 
+     */
+    private function _to_string($property)
+    {
+	$record = '';
+	foreach($this->_definitions as $def)
+	{
+	    $field = '';
+	    if(isset($property[$def]))
+		$field = $property[$def];
+	    if(in_array(str_replace('_00','',$def), self::$repeated_media))
+		$record .= $this->_build_media_fields(str_replace('_00','',$def),$property);
+	    elseif($field == str_replace('_TEXT', '', $field))
+		$record .= $field.$this->_eof;
+	}
+	
+	return $record.$this->_eor;
+    }
+    
 }
+
+
+/**
+ * EXCEPTIONS 
+ */
+class EmptyPropertyDataException extends Exception {}
+class PropertyFieldException extends Exception 
+{
+    public function __construct($key = null, $val = NULL, $code = 0, Exception $previous = null)
+    {
+	$message = $this->message.': '.$key;
+	if($val != NULL)
+	    $message .= ' = '.$val;
+	parent::__construct($message, $code, $previous);
+    }
+}
+class PropertyFieldTooBig extends PropertyFieldException 
+{
+    protected $message = 'The following field is too long';
+}
+class PropertyFieldNotCharacter extends PropertyFieldException 
+{
+    protected $message = 'The following field is not a valid character';
+}
+class PropertyFieldNotInteger extends PropertyFieldException 
+{
+    protected $message = 'The following field is not a valid integer';
+}
+class MissingRequiredFieldsException extends PropertyFieldException 
+{
+    protected $message = 'The property data is missing a required field';
+}
+class InvalidRightMoveFieldData extends PropertyFieldException
+{
+    protected $message = 'The following field does not match RightMove\'s allowed data for this field';
+}
+
 
 // End of file
