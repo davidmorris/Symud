@@ -614,30 +614,36 @@ class Symud {
     protected static $media_regex = '/MEDIA_(IMAGE|IMAGE_TEXT|
 	FLOORPLAN|FLOORPLAN_TEXT|DOCUMENT|DOCUMENT_TEXT|
 	VIRTUAL_TOUR|VIRTUAL_TOUR_TEXT)_\d+/';
+    protected static $special_media_regex = '/(MEDIA_IMAGE_60|MEDIA_IMAGE_TEX_60|
+	MEDIA_DOCUMENT_50|MEDIA_DOCUMENT_TEXT_50)/';
     
     /**
      * END OF STATIC VARIABLES 
      */
     
-    private $_branch_id                 = '994499';	// Default branch id
+    private $_branch_id                 = '99xx99';	// Default branch id
     private $_eof                       = '^';		// End of Field delim
     private $_eor                       = '~';		// End of Record delim
-    private $_definitions		= array();	// Definitions array
+    private $_definitions		= array();	// Definitions used
+    private $_definitions_validation	= array();	// Definitions validation array
     private $_requireds			= array();	// Required definitions
     
     private $_properties                = array();	// Holds properties
     private $_num_of_properties         = 0;
     
     private $_max_media_image_num	= 1; // Default requires one image
-    private $_max_floor_plan_num	= 0;
+    private $_max_media_floor_plan_num	= 0;
     private $_max_media_document_num	= 0;
-    private $_max_virtual_tour_num	= 0;
+    private $_max_media_virtual_tour_num	= 0;
     
-    public function __construct($branch_id, $eof = '^', $eor = '|') 
+    public function __construct($branch_id, $eof = '^', $eor = '~', $time_zone = 'Europe/London') 
     {
         $this->_branch_id = $branch_id;
         $this->_eof = $eof;
 	$this->_eor = $eor;
+	
+	// Set the timezone for date generation
+	date_default_timezone_set($time_zone);
 	
 	$this->_init_keys()->_init_requireds();
     }
@@ -700,7 +706,7 @@ class Symud {
 
     public function get_max_floorplans_num()
     {
-	return $this->_max_floor_plan_num;
+	return $this->_max_media_floor_plan_num;
     }
 
     public function get_max_documents_num()
@@ -710,26 +716,44 @@ class Symud {
     
     public function get_max_virtual_num()
     {
-	return $this->_max_virtual_tour_num;
+	return $this->_max_media_virtual_tour_num;
     }
 
     /**
-     * Adds a property, santises it and validates it first
+     * Adds a property, santises it and validates it first.
+     * 
      * @param array $property
      * @return int the property number 
      */    
-    public function add_property($property)
+    public function add_property($id, $data)
     {
 	// Add branch ids and references etc
-	$property['AGENT_REF'] = $this->_branch_id.'_'.($this->_num_of_properties + 1);
-	$property['BRANCH_ID'] = $this->_branch_id;
+	$property = array(
+	    'AGENT_REF'	=> $this->_branch_id.'_'.$id,
+	    'BRANCH_ID' => $this->_branch_id
+	);
+	
+	$property = array_merge($property, $data);
 	
 	$this->_sanitise_property($property)->_check_for_requireds($property)
-		->_validate_property($property)->_media_count($property);
+		->_validate_property($property)//->_media_count($property)
+		->_build_definitions($property);
 	
-	$this->_properties[] = $property;
+	$this->_properties[$id] = $property;
 	
 	return ++$this->_num_of_properties;
+    }
+    
+    /**
+     * Builds a RightMove BLM file using the properties provided.
+     * 
+     * @return string 
+     */
+    public function build()
+    {
+	$build = $this->_header().$this->_definitions().$this->_data().'#END#';
+	
+	return $build;
     }
     
     
@@ -817,10 +841,10 @@ class Symud {
      */
     private function _init_keys()
     {
-	$this->_definitions = array_keys(self::$rightmove_definitions);
-	$m = count($this->_definitions);
+	$this->_definitions_validation = array_keys(self::$rightmove_definitions);
+	$m = count($this->_definitions_validation);
 	for($i = 0; $i < $m; $i++)
-	    $this->_definitions[$i] = str_replace ('_XX','_00', $this->_definitions[$i]);
+	    $this->_definitions_validation[$i] = str_replace ('_XX','_00', $this->_definitions_validation[$i]);
 	
 	return $this;
     }
@@ -851,7 +875,7 @@ class Symud {
 	foreach($property as $key => $val)
 	{
 	    //check if we have a key in our definitions
-	    if(in_array($key, $this->_definitions) || preg_match(self::$media_regex, $key))
+	    if(in_array($key, $this->_definitions_validation) || preg_match(self::$media_regex, $key))
 		$return[$key] = $val;
 	}
 	
@@ -896,13 +920,17 @@ class Symud {
 	{
 	    if(isset(self::$rightmove_definitions[$key]))
 	    {
-		// Test length and data type
+		// Test field doesn't exceed max length
 		$el = self::$rightmove_definitions[$key];
 		if($el['len'] > 0 && strlen($val) > $el['len'])
 		    throw new PropertyFieldTooBig($key);
-		if($el['type'] == 'int' && !is_integer($val) && !ctype_digit($val))
+		
+		// Test field is a valid integer or digit for integer data type
+		if($el['type'] == 'int' && !is_integer($val) && !ctype_digit($val)
+			&& ($key == 'BRANCH_ID' && $val != '99xx99'))
 		    throw new PropertyFieldNotInteger($key, $val);
-		else if(!strlen(trim($val)))
+
+		else if(!strlen(trim($val))) // For string fields, just check they're not empty
 		    throw new PropertyFieldNotCharacter($key, $val);
 		
 		// Check against RightMove's custom fields
@@ -927,68 +955,87 @@ class Symud {
 	$keys = array_keys($property);
 	$this->_max_media_image_num = max(count(preg_grep('/MEDIA_IMAGE_\d+/', $keys)), $this->_max_media_image_num);
 	$this->_max_media_document_num = max(count(preg_grep('/MEDIA_DOCUMENT_\d+/', $keys)), $this->_max_media_document_num);
-	$this->_max_floor_plan_num = max(count(preg_grep('/MEDIA_FLOOR_PLAN_\d+/', $keys)), $this->_max_floor_plan_num);
-	$this->_max_virtual_tour_num = max(count(preg_grep('/MEDIA_VIRTUAL_TOUR_\d+/', $keys)), $this->_max_virtual_tour_num);
+	$this->_max_media_floor_plan_num = max(count(preg_grep('/MEDIA_FLOOR_PLAN_\d+/', $keys)), $this->_max_media_floor_plan_num);
+	$this->_max_media_virtual_tour_num = max(count(preg_grep('/MEDIA_VIRTUAL_TOUR_\d+/', $keys)), $this->_max_media_virtual_tour_num);
 	
 	return $this;
     }
     
+    
+    private function _build_definitions(&$property)
+    {
+	$this->_definitions = array_merge($this->_definitions, $property);
+	foreach($this->_definitions as $k => $v)
+	    $this->_definitions[$k] = '';
+	return $this;
+    }
+    
     /**
-     * Automatically builds the media fields, to ensure the max number is used for 
-     * each record. Blanks are used if media does not exist for property
-     * 
-     * returns the blm formatted field data
-     * 
-     * @param string $tag
-     * @param array $property
+     * Generates the #HEADER# portion of a blm file
      * @return string 
      */
-    private function _build_media_fields($tag, &$property)
+    private function _header()
     {
-	$return = '';
-	$tag = str_replace('_text', '', $tag);
-	$keys = array_keys($property);
+	$return = "#HEADER#\nVersion: %s\nEOF: '%s'\nEOR: '%s'\nProperty Count: %d\nGenerated Date: %s\n\n";
 	
-	// Get our media 
-	$media = preg_grep('/'.$tag.'_\d+/', $keys);
-	
-	// Get our media text
-	foreach(preg_grep('/'.$tag.'_TEXT_\d+/', $keys) as $el)
-	    $media[] = $el;	
-	$count = '_max_'.strtolower($tag).'_num';
-	$media = array_pad($media, ($this->{$count} * 2), '');
-	foreach($media as $field)
-	    $return .= $property[$field].$this->_eof;
-	
-	if(strlen($return) == 0)
-	    $return = $this->_eof.$this->_eof;
+	$return = sprintf($return, self::$verison, $this->_eof, $this->_eor, 
+		$this->_num_of_properties, date('d-M-Y H:i'));
 	
 	return $return;
+    }
+    
+    /**
+     * Generates the #DEFINITION# portion of a blm file
+     * @return string 
+     */
+    private function _definitions()
+    {
+	return "#DEFINITION#\n".implode('^',array_keys($this->_definitions)).$this->_eof.$this->_eor."\n\n";
+    }
+    
+    /**
+     * Generates the #DATA# portion of a blm file
+     * @return string 
+     */
+    private function _data()
+    {
+	$record = "#DATA#\n";
+	foreach($this->_properties as $property)
+	    $record .= $this->_to_string($property)."\n\n";
 	
+	return $record."\n\n";
     }
     
     /**
      * Turns a single property into a blm formatted record
      * 
-     * @todo fix duplicated with media text
      * @param array $property
      * @return string 
      */
     private function _to_string($property)
     {
 	$record = '';
-	foreach($this->_definitions as $def)
-	{
-	    $field = '';
-	    if(isset($property[$def]))
-		$field = $property[$def];
-	    if(in_array(str_replace('_00','',$def), self::$repeated_media))
-		$record .= $this->_build_media_fields(str_replace('_00','',$def),$property);
-	    elseif($field == str_replace('_TEXT', '', $field))
-		$record .= $field.$this->_eof;
-	}
-	
+	foreach($this->_definitions as $k => $v)
+	    $record .= ((isset($property[$k])) ? ($property[$k]) : ('')).$this->_eof;
+
 	return $record.$this->_eor;
+    }
+    
+    public function tablify()
+    {
+	$table = '<table border="1"><thead><tr>';
+	$data = str_replace(array('#DATA#'), '', $this->_data());
+	foreach($this->_definitions as $th => $ignore)
+		$table .='<th>'.$th.'</th>';
+	$table .= '</tr><tbody>';
+	foreach(explode($this->_eor, $data) as $tr)
+	{
+	    $table .= '<tr>';
+		foreach(explode($this->_eof, $tr) as $td)
+		    $table .='<td>'.$td.'</td>';
+	    $table .= '</tr>';
+	}
+	return $table.'</tbody></table>';
     }
     
 }
